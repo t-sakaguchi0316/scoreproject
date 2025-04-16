@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+<!-- 上記はEclipseの警告を消すための記述です。 -->
+
+<Context reloadable="true">
+	<Resource
+    	name="jdbc/book"
+    	auth="Container"
+    	type="javax.sql.DataSource"
+    	driverClassName="org.h2.Driver"
+    	url="jdbc:h2:tcp://localhost:9092/~/book"
+    	username="sa"
+    	password=""
+	/>
+
+	<!-- 		url="jdbc:h2:tcp://localhost/~/book" -->
+</Context>
