@@ -1,13 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
     pageEncoding="UTF-8"%>
 
-<!--
- <div class="menu-wrapper">
-     <%@ include file="" %>
- </div>
 
- -->
 <%@include file="../header.jsp" %>
+
 <h2>メニュー</h2>
 <a href="">学生管理</a>
 <div>
