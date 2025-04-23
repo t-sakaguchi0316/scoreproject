@@ -43,7 +43,7 @@ public class FrontController extends HttpServlet {
             response.setContentType("text/html; charset=UTF-8");
             PrintWriter out = response.getWriter();
             out.println("<h2>エラー発生</h2>");
-            e.printStackTrace(out);
+            e.printStackTrace();
         }
     }
 
