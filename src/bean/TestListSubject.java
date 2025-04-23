@@ -1,8 +1,9 @@
 package bean;
 
+import java.io.Serializable;
 import java.util.Map;
 //ゲッターセッターが足りない
-public class TestListSubject {
+public class TestListSubject implements Serializable{
 	private int entYear;
 	private String studentNo;
 	private String studentName;
