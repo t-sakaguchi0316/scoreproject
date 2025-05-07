@@ -29,8 +29,8 @@ public class TeacherDao extends DAO{
 
         return teacher;
 
-
 	}
+
 
 	public Teacher login(String id,String password)throws Exception{
 		Connection con =getConnection();
