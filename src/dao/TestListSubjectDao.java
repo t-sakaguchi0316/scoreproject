@@ -13,47 +13,46 @@ import bean.Subject;
 import bean.TestListSubject;
 
 /**
- * 学生ごとの科目別得点を取得するDAO
+ * 学生ごとのテストNo別得点を取得するDAO
  */
-public class TestListSubjectDao {
+public class TestListSubjectDao extends DAO {
     /**
      * フィルタ条件（校舎・入学年・クラス番号・科目）で絞り込むSQL
      */
     private static final String baseSql =
-        "SELECT st.ent_year, st.no AS studentNo, " +
-        "       st.name AS studentName, " +
-        "       st.class_num, " +
-        "       t.subject_cd AS subjectCd, " +
-        "       t.point AS point " +
+        "SELECT st.ent_year    AS entYear, " +
+        "       t.student_no   AS studentNo, " +
+        "       st.name        AS studentName, " +
+        "       st.class_num   AS classNum, " +
+        "       t.no           AS testNo, " +
+        "       t.point        AS point " +
         "  FROM TEST t " +
-        "  JOIN STUDENT st ON t.no = st.no " +
-        " WHERE st.school_cd = ? " +
-        "   AND st.ent_year  = ? " +
-        "   AND st.class_num = ? " +
-        "   AND t.subject_cd = ?";
+        "  JOIN STUDENT st ON t.student_no = st.no " +
+        " WHERE t.school_cd   = ? " +
+        "   AND st.ent_year   = ? " +
+        "   AND st.class_num  = ? " +
+        "   AND t.subject_cd  = ?";
 
     /**
      * ResultSetからTestListSubjectを組み立てる。
-     * 同一studentNoの行はマージし、pointsマップに科目コード→得点を登録
+     * 同一studentNoの行はマージし、pointsマップにテストNo→得点を登録
      */
     private List<TestListSubject> postFilter(ResultSet rs) throws Exception {
         Map<String, TestListSubject> map = new LinkedHashMap<>();
         while (rs.next()) {
-            String no = rs.getString("studentNo");
-            TestListSubject bean = map.get(no);
+            String studentNo = rs.getString("studentNo");
+            TestListSubject bean = map.get(studentNo);
             if (bean == null) {
                 bean = new TestListSubject();
-                bean.setEntYear(    rs.getInt("ent_year"));
-                bean.setStudentNo(  no);
+                bean.setEntYear(rs.getInt("entYear"));
+                bean.setStudentNo(studentNo);
                 bean.setStudentName(rs.getString("studentName"));
-                bean.setClassNum(   rs.getString("class_num"));
-                // points は bean のコンストラクタで初期化済み
-                map.put(no, bean);
+                bean.setClassNum(rs.getString("classNum"));
+                map.put(studentNo, bean);
             }
-            // 科目コードと得点をマップに追加
-            int subjCd = rs.getInt("subjectCd");
+            int testNo = rs.getInt("testNo");
             int pt     = rs.getInt("point");
-            bean.putPoint(subjCd, pt);
+            bean.putPoint(testNo, pt);
         }
         return new ArrayList<>(map.values());
     }
@@ -61,18 +60,18 @@ public class TestListSubjectDao {
     /**
      * 条件を指定してDBから該当データを取得し、postFilter経由で返却
      *
-     * @param entYear  入学年
-     * @param classNum クラス番号
-     * @param subject  科目bean
-     * @param school   校舎bean
+     * @param entYear   入学年
+     * @param classNum  クラス番号
+     * @param subject   科目bean（getCd()で科目コードを取得）
+     * @param school    校舎bean（getCd()で校舎コードを取得）
      * @return TestListSubjectのリスト
+     * @throws Exception SQL実行時の例外
      */
     public List<TestListSubject> filter(int entYear,
-                                        String classNum,
-                                        Subject subject,
-                                        School school) {
-        List<TestListSubject> result = new ArrayList<>();
-        try (Connection conn = new DAO().getConnection();
+                                       String classNum,
+                                       Subject subject,
+                                       School school) throws Exception {
+        try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(baseSql)) {
 
             ps.setString(1, school.getCd());
@@ -81,11 +80,8 @@ public class TestListSubjectDao {
             ps.setString(4, subject.getCd());
 
             try (ResultSet rs = ps.executeQuery()) {
-                result = postFilter(rs);
+                return postFilter(rs);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return result;
     }
 }
