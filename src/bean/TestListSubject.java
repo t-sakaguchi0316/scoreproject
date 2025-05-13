@@ -1,6 +1,7 @@
 package bean;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -12,6 +13,11 @@ public class TestListSubject implements Serializable {
     private String studentName;
     private String classNum;
     private Map<Integer, Integer> points;
+
+    public TestListSubject() {
+        // points マップを初期化
+        this.points = new HashMap<>();
+    }
 
     public int getEntYear() {
         return entYear;
@@ -54,11 +60,24 @@ public class TestListSubject implements Serializable {
     }
 
     /**
-     * 科目コード(subjectCd)と得点(point)をマップに追加する
+     * 指定科目コードの点数を文字列として取得する。
+     * 未登録の場合は null を返す。
+     *
+     * @param key 科目コード
+     * @return 点数（String）
      */
-    public void putPoint(Integer subjectCd, Integer point) {
-        if (this.points != null) {
-            this.points.put(subjectCd, point);
-        }
+    public String getPoint(int key) {
+        Integer value = this.points.get(key);
+        return (value != null) ? value.toString() : null;
+    }
+
+    /**
+     * 指定科目コードに対して点数を設定（追加／更新）する。
+     *
+     * @param key   科目コード
+     * @param value 点数
+     */
+    public void putPoint(int key, int value) {
+        this.points.put(key, value);
     }
 }
