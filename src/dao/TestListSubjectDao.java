@@ -4,8 +4,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +33,7 @@ public class TestListSubjectDao {
         "   AND t.subject_cd = ?";
 
     /**
-     * ResultSetからTestListSubjectを組み立てる。<br>
+     * ResultSetからTestListSubjectを組み立てる。
      * 同一studentNoの行はマージし、pointsマップに科目コード→得点を登録
      */
     private List<TestListSubject> postFilter(ResultSet rs) throws Exception {
@@ -45,11 +43,11 @@ public class TestListSubjectDao {
             TestListSubject bean = map.get(no);
             if (bean == null) {
                 bean = new TestListSubject();
-                bean.setEntYear(rs.getInt("ent_year"));
-                bean.setStudentNo(no);
+                bean.setEntYear(    rs.getInt("ent_year"));
+                bean.setStudentNo(  no);
                 bean.setStudentName(rs.getString("studentName"));
-                bean.setClassNum(rs.getString("class_num"));
-                bean.setPoints(new HashMap<>());
+                bean.setClassNum(   rs.getString("class_num"));
+                // points は bean のコンストラクタで初期化済み
                 map.put(no, bean);
             }
             // 科目コードと得点をマップに追加
@@ -73,7 +71,7 @@ public class TestListSubjectDao {
                                         String classNum,
                                         Subject subject,
                                         School school) {
-        List<TestListSubject> result = Collections.emptyList();
+        List<TestListSubject> result = new ArrayList<>();
         try (Connection conn = new DAO().getConnection();
              PreparedStatement ps = conn.prepareStatement(baseSql)) {
 
