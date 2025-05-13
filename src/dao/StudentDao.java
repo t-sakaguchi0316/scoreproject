@@ -9,177 +9,148 @@ import java.util.List;
 import bean.School;
 import bean.Student;
 
-public class StudentDao extends DAO{
+/**
+ * STUDENTテーブルのレコード取得、検索、保存（登録/更新）を行うDAO
+ */
+public class StudentDao extends DAO {
+    /** 1件取得SQL */
+    private static final String SELECT_ONE_SQL =
+        "SELECT no, name, ent_year, class_num, is_attend, school_cd " +
+        "FROM STUDENT WHERE no = ?";
 
+    /** 検索SQL：校舎・入学年・クラス番号・在籍フラグ */
+    private static final String SELECT_FILTER_WITH_CLASS =
+        "SELECT no, name, ent_year, class_num, is_attend " +
+        "FROM STUDENT " +
+        "WHERE school_cd = ? AND ent_year = ? AND class_num = ? AND is_attend = ? " +
+        "ORDER BY no ASC";
 
-	public Student get(String no) throws Exception {
-	    Connection con = getConnection();
-	    PreparedStatement st = con.prepareStatement(
-	        "SELECT no, name, entYear, classNum, isAttend, school_no FROM student WHERE no = ?"
-	    );
-	    st.setString(1, no);
-	    ResultSet rs = st.executeQuery();
+    /** 検索SQL：校舎・入学年・在籍フラグ */
+    private static final String SELECT_FILTER_WITH_YEAR =
+        "SELECT no, name, ent_year, class_num, is_attend " +
+        "FROM STUDENT " +
+        "WHERE school_cd = ? AND ent_year = ? AND is_attend = ? " +
+        "ORDER BY no ASC";
 
-	    Student student = null;
-	    if (rs.next()) {
-	        student = new Student();
-	        student.setNo(rs.getString("no"));
-	        student.setName(rs.getString("name"));
-	        student.setEntYear(rs.getInt("entYear"));
-	        student.setClassNum(rs.getString("classNum"));
-	        student.setIsAttend(rs.getBoolean("isAttend"));
+    /** 検索SQL：校舎・在籍フラグ */
+    private static final String SELECT_FILTER_BASIC =
+        "SELECT no, name, ent_year, class_num, is_attend " +
+        "FROM STUDENT " +
+        "WHERE school_cd = ? AND is_attend = ? " +
+        "ORDER BY no ASC";
 
-	        // 学校情報の取得が必要ならここでSchoolDaoなどで取得
-	        School school = new School();
-	        school.setCd(rs.getString("school_no"));
-	        student.setSchool(school);
-	    }
+    /**
+     * 学生番号で1件取得
+     * @param no 学生番号
+     * @return Student または null
+     */
+    public Student get(String no) throws Exception {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_ONE_SQL)) {
+            ps.setString(1, no);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Student s = new Student();
+                    s.setNo(rs.getString("no"));
+                    s.setName(rs.getString("name"));
+                    s.setEntYear(rs.getInt("ent_year"));
+                    s.setClassNum(rs.getString("class_num"));
+                    s.setIsAttend(rs.getBoolean("is_attend"));
+                    School sc = new School();
+                    sc.setCd(rs.getString("school_cd"));
+                    s.setSchool(sc);
+                    return s;
+                }
+            }
+        }
+        return null;
+    }
 
-	    rs.close();
-	    st.close();
-	    con.close();
+    /**
+     * 校舎・入学年・クラス番号・在籍フラグで学生リスト取得
+     */
+    public List<Student> filter(School school,
+                                int entYear,
+                                String classNum,
+                                boolean isAttend) throws Exception {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_FILTER_WITH_CLASS)) {
+            ps.setString(1, school.getCd());
+            ps.setInt(2, entYear);
+            ps.setString(3, classNum);
+            ps.setBoolean(4, isAttend);
+            try (ResultSet rs = ps.executeQuery()) {
+                return postFilter(rs, school);
+            }
+        }
+    }
 
-	    return student;
-	}
+    /**
+     * 校舎・入学年・在籍フラグで学生リスト取得
+     */
+    public List<Student> filter(School school,
+                                int entYear,
+                                boolean isAttend) throws Exception {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_FILTER_WITH_YEAR)) {
+            ps.setString(1, school.getCd());
+            ps.setInt(2, entYear);
+            ps.setBoolean(3, isAttend);
+            try (ResultSet rs = ps.executeQuery()) {
+                return postFilter(rs, school);
+            }
+        }
+    }
 
+    /**
+     * 校舎・在籍フラグで学生リスト取得
+     */
+    public List<Student> filter(School school,
+                                boolean isAttend) throws Exception {
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_FILTER_BASIC)) {
+            ps.setString(1, school.getCd());
+            ps.setBoolean(2, isAttend);
+            try (ResultSet rs = ps.executeQuery()) {
+                return postFilter(rs, school);
+            }
+        }
+    }
 
-	private List<Student>postFilter(School school)throws Exception{
-		Connection con = getConnection();
-	    PreparedStatement st = con.prepareStatement(
-	        "SELECT no, name, entYear, classNum, isAttend FROM student WHERE school_no = ? AND isAttend = true"
-	    );
-	    st.setString(1, school.getCd());  // SchoolクラスにgetNo()があると仮定
+    /**
+     * ResultSetからStudentリストを組み立てる
+     */
+    private List<Student> postFilter(ResultSet rs, School school) throws Exception {
+        List<Student> list = new ArrayList<>();
+        while (rs.next()) {
+            Student s = new Student();
+            s.setNo(rs.getString("no"));
+            s.setName(rs.getString("name"));
+            s.setEntYear(rs.getInt("ent_year"));
+            s.setClassNum(rs.getString("class_num"));
+            s.setIsAttend(rs.getBoolean("is_attend"));
+            s.setSchool(school);
+            list.add(s);
+        }
+        return list;
+    }
 
-	    ResultSet rs = st.executeQuery();
-
-	    List<Student> list = new ArrayList<>();
-	    while (rs.next()) {
-	        Student student = new Student();
-	        student.setNo(rs.getString("no"));
-	        student.setName(rs.getString("name"));
-	        student.setEntYear(rs.getInt("entYear"));
-	        student.setClassNum(rs.getString("classNum"));
-	        student.setIsAttend(rs.getBoolean("isAttend"));
-	        student.setSchool(school);  // 引数のSchoolをそのままセット
-
-	        list.add(student);
-	    }
-
-	    rs.close();
-	    st.close();
-	    con.close();
-
-	    return list;
-	}
-	public List<Student> filter(School school, int entYear, String classNum, boolean isAttend) throws Exception {
-	    Connection con = getConnection();
-	    PreparedStatement st = con.prepareStatement(
-	        "SELECT no, name, entYear, classNum, isAttend "
-	        + "FROM student WHERE school_no = ? AND entYear = ? AND classNum = ? AND isAttend = ?"
-	    );
-	    st.setString(1, school.getCd());
-	    st.setInt(2, entYear);
-	    st.setString(3, classNum);
-	    st.setBoolean(4, isAttend);
-
-	    ResultSet rs = st.executeQuery();
-	    List<Student> list = new ArrayList<>();
-
-	    while (rs.next()) {
-	        Student student = new Student();
-	        student.setNo(rs.getString("no"));
-	        student.setName(rs.getString("name"));
-	        student.setEntYear(rs.getInt("entYear"));
-	        student.setClassNum(rs.getString("classNum"));
-	        student.setIsAttend(rs.getBoolean("isAttend"));
-	        student.setSchool(school);
-	        list.add(student);
-	    }
-
-	    rs.close();
-	    st.close();
-	    con.close();
-
-	    return list;
-	}
-
-	public List<Student> filter(School school, int entYear, boolean isAttend) throws Exception {
-	    Connection con = getConnection();
-	    PreparedStatement st = con.prepareStatement(
-	        "SELECT no, name, entYear, classNum, isAttend FROM student WHERE school_no = ? AND entYear = ? AND isAttend = ?"
-	    );
-	    st.setString(1, school.getCd());
-	    st.setInt(2, entYear);
-	    st.setBoolean(3, isAttend);
-
-	    ResultSet rs = st.executeQuery();
-	    List<Student> list = new ArrayList<>();
-
-	    while (rs.next()) {
-	        Student student = new Student();
-	        student.setNo(rs.getString("no"));
-	        student.setName(rs.getString("name"));
-	        student.setEntYear(rs.getInt("entYear"));
-	        student.setClassNum(rs.getString("classNum"));
-	        student.setIsAttend(rs.getBoolean("isAttend"));
-	        student.setSchool(school);
-	        list.add(student);
-	    }
-
-	    rs.close();
-	    st.close();
-	    con.close();
-
-	    return list;
-	}
-
-	public List<Student> filter(School school, boolean isAttend) throws Exception {
-	    Connection con = getConnection();
-	    PreparedStatement st = con.prepareStatement(
-	        "SELECT no, name, entYear, classNum, isAttend FROM student WHERE school_no = ? AND isAttend = ?"
-	    );
-	    st.setString(1, school.getCd());
-	    st.setBoolean(2, isAttend);
-
-	    ResultSet rs = st.executeQuery();
-	    List<Student> list = new ArrayList<>();
-
-	    while (rs.next()) {
-	        Student student = new Student();
-	        student.setNo(rs.getString("no"));
-	        student.setName(rs.getString("name"));
-	        student.setEntYear(rs.getInt("entYear"));
-	        student.setClassNum(rs.getString("classNum"));
-	        student.setIsAttend(rs.getBoolean("isAttend"));
-	        student.setSchool(school);
-	        list.add(student);
-	    }
-
-	    rs.close();
-	    st.close();
-	    con.close();
-
-	    return list;
-	}
-
-	public boolean save(Student student) throws Exception {
-	    Connection con = getConnection();
-	    PreparedStatement st = con.prepareStatement(
-	        "INSERT INTO student (no, name, entYear, classNum, isAttend, school_no) VALUES (?, ?, ?, ?, ?, ?)"
-	    );
-	    st.setString(1, student.getNo());
-	    st.setString(2, student.getName());
-	    st.setInt(3, student.getEntYear());
-	    st.setString(4, student.getClassNum());
-	    st.setBoolean(5, student.getIsAttend());
-	    st.setString(6, student.getSchool().getCd());
-
-	    int rows = st.executeUpdate(); // 1行追加されれば1
-
-	    st.close();
-	    con.close();
-
-	    return rows > 0;
-	}
-
+    /**
+     * 学生データを登録または更新
+     */
+    public boolean save(Student student) throws Exception {
+        String mergeSql =
+            "MERGE INTO STUDENT (no, name, ent_year, class_num, is_attend, school_cd) " +
+            "KEY(no) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(mergeSql)) {
+            ps.setString(1, student.getNo());
+            ps.setString(2, student.getName());
+            ps.setInt(3, student.getEntYear());
+            ps.setString(4, student.getClassNum());
+            ps.setBoolean(5, student.getIsAttend());
+            ps.setString(6, student.getSchool().getCd());
+            return ps.executeUpdate() > 0;
+        }
+    }
 }
