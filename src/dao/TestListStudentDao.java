@@ -4,58 +4,46 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import bean.School;
 import bean.Subject;
-import bean.TestListSubject;
+import bean.TestListStudent;
 
 /**
- * 学生ごとのテストNo別得点を取得するDAO
+ * 科目ごとの学生別得点を取得するDAO
  */
-public class TestListSubjectDao extends DAO {
+public class TestListStudentDao extends DAO {
     /**
      * フィルタ条件（校舎・入学年・クラス番号・科目）で絞り込むSQL
      */
     private static final String baseSql =
-        "SELECT st.ent_year    AS entYear, " +
-        "       t.student_no   AS studentNo, " +
-        "       st.name        AS studentName, " +
-        "       st.class_num   AS classNum, " +
-        "       t.no           AS testNo, " +
-        "       t.point        AS point " +
+        "SELECT t.subject_cd   AS subjectCd, " +
+        "       sub.name        AS subjectName, " +
+        "       t.student_no    AS num, " +
+        "       t.point         AS point " +
         "  FROM TEST t " +
         "  JOIN STUDENT st ON t.student_no = st.no " +
+        "  JOIN SUBJECT sub ON t.subject_cd = sub.cd AND sub.school_cd = t.school_cd " +
         " WHERE t.school_cd   = ? " +
         "   AND st.ent_year   = ? " +
         "   AND st.class_num  = ? " +
         "   AND t.subject_cd  = ?";
 
     /**
-     * ResultSetからTestListSubjectを組み立てる。<br>
-     * 同一studentNoの行はマージし、pointsマップにテストNo→得点を登録
+     * ResultSetからTestListStudentを組み立てる。
      */
-    private List<TestListSubject> postFilter(ResultSet rs) throws Exception {
-        Map<String, TestListSubject> map = new LinkedHashMap<>();
+    private List<TestListStudent> postFilter(ResultSet rs) throws Exception {
+        List<TestListStudent> list = new ArrayList<>();
         while (rs.next()) {
-            String studentNo = rs.getString("studentNo");
-            TestListSubject bean = map.get(studentNo);
-            if (bean == null) {
-                bean = new TestListSubject();
-                bean.setEntYear(    rs.getInt("entYear"));
-                bean.setStudentNo(  studentNo);
-                bean.setStudentName(rs.getString("studentName"));
-                bean.setClassNum(   rs.getString("classNum"));
-                map.put(studentNo, bean);
-            }
-            // テストNoと得点をマップに追加
-            int testNo = rs.getInt("testNo");
-            int pt     = rs.getInt("point");
-            bean.putPoint(testNo, pt);
+            TestListStudent bean = new TestListStudent();
+            bean.setSubjectCd(  rs.getString("subjectCd"));
+            bean.setSubjectName(rs.getString("subjectName"));
+            bean.setNum(        rs.getInt   ("num"));
+            bean.setPoint(      rs.getInt   ("point"));
+            list.add(bean);
         }
-        return new ArrayList<>(map.values());
+        return list;
     }
 
     /**
@@ -65,25 +53,24 @@ public class TestListSubjectDao extends DAO {
      * @param classNum  クラス番号
      * @param subject   科目bean（getCd()で科目コードを取得）
      * @param school    校舎bean（getCd()で校舎コードを取得）
-     * @return TestListSubjectのリスト
+     * @return TestListStudentのリスト
+     * @throws Exception SQL実行時の例外
      */
-    public List<TestListSubject> filter(int entYear,
+    public List<TestListStudent> filter(int entYear,
                                        String classNum,
                                        Subject subject,
                                        School school) throws Exception {
-        List<TestListSubject> result = new ArrayList<>();
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(baseSql)) {
 
             ps.setString(1, school.getCd());
-            ps.setInt(2, entYear);
+            ps.setInt(   2, entYear);
             ps.setString(3, classNum);
             ps.setString(4, subject.getCd());
 
             try (ResultSet rs = ps.executeQuery()) {
-                result = postFilter(rs);
+                return postFilter(rs);
             }
         }
-        return result;
     }
 }
