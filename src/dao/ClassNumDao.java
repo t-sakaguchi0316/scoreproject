@@ -3,46 +3,63 @@ package dao;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.ArrayList;
+import java.util.List;
 
 import bean.ClassNum;
 import bean.School;
 
 public class ClassNumDao extends DAO {
 
-    /**
-     * クラス番号テーブルから 1 レコードを取得する
-     *
-     * @param class_num 検索するクラス番号
-     * @param school    検索する学校オブジェクト
-     * @return 該当レコードがあれば ClassNum、なければ null
-     * @throws Exception
-     */
+    // 既存の get メソッド。Bean のままなら setClass_num を呼び出し
     public ClassNum get(String class_num, School school) throws Exception {
-        Connection con = getConnection();
-        ClassNum classNumObj = null;
+        String sql =
+            "SELECT CLASS_NUM, SCHOOL_CD " +
+            "FROM CLASS_NUM " +
+            "WHERE CLASS_NUM = ? AND SCHOOL_CD = ?";
 
-        // ■ テーブル名とカラム名を適切に修正
-        String sql = ""
-            + "SELECT CLASS_NUM, SCHOOL_CD "
-            + "FROM CLASS_NUM "
-            + "WHERE CLASS_NUM = ? AND SCHOOL_CD = ?";
-        PreparedStatement st = con.prepareStatement(sql);
-        st.setString(1, class_num);
-        st.setString(2, school.getCd());
-
-        ResultSet rs = st.executeQuery();
-        if (rs.next()) {
-            classNumObj = new ClassNum();
-            // ■ bean.ClassNum#setClassNum は文字列を受け取る
-            classNumObj.setClass_num(rs.getString("CLASS_NUM"));
-            // ■ bean.ClassNum#setSchool は School 型を受け取る想定
-            classNumObj.setSchool(school);
+        try (
+            Connection con = getConnection();
+            PreparedStatement st = con.prepareStatement(sql)
+        ) {
+            st.setString(1, class_num);
+            st.setString(2, school.getCd());
+            try (ResultSet rs = st.executeQuery()) {
+                if (!rs.next()) return null;
+                ClassNum cn = new ClassNum();
+                cn.setClass_num(rs.getString("CLASS_NUM"));
+                cn.setSchool(school);
+                return cn;
+            }
         }
+    }
 
-        rs.close();
-        st.close();
-        con.close();
+    // 新規追加：指定校のクラス一覧を取得
+    public List<ClassNum> findBySchool(String schoolCd) throws Exception {
+        List<ClassNum> list = new ArrayList<>();
+        String sql =
+            "SELECT CLASS_NUM, SCHOOL_CD " +
+            "FROM CLASS_NUM " +
+            "WHERE SCHOOL_CD = ? " +
+            "ORDER BY CLASS_NUM";
 
-        return classNumObj;
+        try (
+            Connection con = getConnection();
+            PreparedStatement st = con.prepareStatement(sql)
+        ) {
+            st.setString(1, schoolCd);
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    ClassNum cn = new ClassNum();
+                    cn.setClass_num(rs.getString("CLASS_NUM"));
+                    // School Bean もセットする場合
+                    School sc = new School();
+                    sc.setCd(schoolCd);
+                    cn.setSchool(sc);
+                    list.add(cn);
+                }
+            }
+        }
+        return list;
     }
 }
