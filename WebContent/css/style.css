@@ -1,75 +1,75 @@
-@CHARSET "UTF-8";
+/* style.css */
 
-/* ページ全体のリセット */
-body {
-    margin: 0;
-    padding: 0;
-    font-family: "Meiryo", "ヒラギノ角ゴ ProN", sans-serif;
-}
-
-/* 上部タイトルエリア */
-.header-wrapper {
-    width: 100%;
-    background-color: #ddd;
-    padding: 15px;
-    text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-    border-bottom: 1px solid #ccc;
-}
-
-/* メニューとコンテンツを横並びにするコンテナ */
-.main-container {
-    display: flex;
-    width: 100%;
-    height: calc(100vh - 60px);
-}
-
-/* 左メニューエリア */
-.menu-wrapper {
-    width: 15%;
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-right: 1px solid #ddd;
-}
-
-/* サイドバー全体のリストスタイルをリセット */
-.sidebar-menu,
-.sidebar-menu li,
-.sidebar-menu ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-/* 右コンテンツエリア */
 .content-container {
-    flex-grow: 1;
-    padding: 20px;
-    min-height: 100vh;
-    overflow-y: auto;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 2rem;
 }
 
-/* フッターエリアの中央揃え */
-.footer {
-    width: 100%;
-    background-color: #ddd;
-    padding: 10px;
-    text-align: center;
-    position: fixed;
-    bottom: 0;
-    left: 0;
+/* 画面タイトル */
+.content-container > h2 {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #ccc;
+  font-size: 1.5rem;
 }
 
-.sidebar-title {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 15px;
+/* 共通パネルスタイル */
+.content-container > a,
+.content-container > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 220px;
+  height: 120px;
+  margin: 0.5rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  text-decoration: none;
+  color: #333;
+  transition: box-shadow 0.2s ease;
 }
 
-.sidebar-menu {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+/* ホバー時の影 */
+.content-container > a:hover,
+.content-container > div:hover {
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
 }
 
+/* 学生管理パネル */
+.content-container > a:nth-of-type(1) {
+  background-color: #e8c6c6; /* 薄い赤系 */
+  font-size: 1.25rem;
+}
+
+/* 成績管理パネル */
+.content-container > div {
+  background-color: #d8efd8; /* 薄い緑系 */
+}
+.content-container > div p {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+.content-container > div a {
+  margin: 0.25rem 0;
+  color: #0066cc;
+  font-size: 1rem;
+  text-decoration: none;
+}
+
+/* 科目管理パネル */
+.content-container > a:nth-of-type(2) {
+  background-color: #d8d8f0; /* 薄い紫系 */
+  font-size: 1.25rem;
+}
+
+/* リンクテキストの基本スタイル */
+.content-container a {
+  color: #333;
+}
+s
